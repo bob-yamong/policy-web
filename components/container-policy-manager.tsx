@@ -15,11 +15,12 @@ import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import axios from 'axios'
+import { containerStructure } from './axios-struct'
 
-const containerList = [
-  'ubuntu_A', 'ubuntu_B', 'ubuntu_C', 'alpine_A', 'alpine_B',
-  'alpine_C', 'mongoDB', 'MySQL', 'apache', 'nginx'
-]
+
+
+
 
 const actionCategories = {
   Network: ['Connection Block', 'Port Block', 'IP Block'],
@@ -79,7 +80,14 @@ export function ContainerPolicyManagerComponent() {
   const [containerLogOption, setContainerLogOption] = useState('all')
   const [isWhitelist, setIsWhitelist] = useState(true)
   const [selectedPredefinedPolicy, setSelectedPredefinedPolicy] = useState(null)
+  const [containerList,setContainerList] = useState<containerStructure[]>([]);
 
+
+  
+useEffect(()=> {
+  axios.get('http://113.198.229.153:4001/api/v1/server').then((res)=>{ console.log(res.data.server); setContainerList(res.data.server)}).catch((err)=>console.log(err));
+},[]);
+  
   const renderBackButton = (onClick) => (
     <Button 
       variant="outline" 
@@ -91,17 +99,18 @@ export function ContainerPolicyManagerComponent() {
   )
 
   const renderContainerList = () => (
+   
     <>
       <h1 className="text-3xl font-bold mb-6 text-blue-700">Select Container</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {containerList.map(container => (
+        {containerList &&  containerList.map(container => (
           <Card key={container} className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle>{container}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => setSelectedContainer(container)} className="bg-blue-500 hover:bg-blue-600 text-white">Select</Button>
-            </CardContent>
+           <CardHeader>
+             <CardTitle>{container.name}</CardTitle>
+           </CardHeader>
+           <CardContent>
+             <Button onClick={() => setSelectedContainer(container.name)} className="bg-blue-500 hover:bg-blue-600 text-white">Select</Button>
+          </CardContent>
           </Card>
         ))}
       </div>
@@ -522,7 +531,7 @@ export function ContainerPolicyManagerComponent() {
         </Card>
         <p className="text-xl mb-4">Total Containers: {containerList.length}</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {containerList.map(container => (
+          {containerList &&  containerList.map(container => (
             <Card key={container} className="cursor-pointer hover:shadow-md transition-shadow">
               <CardHeader>
                 <CardTitle>{container}</CardTitle>
