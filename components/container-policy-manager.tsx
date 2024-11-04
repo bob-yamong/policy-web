@@ -167,61 +167,55 @@ useEffect(()=>{
           <CardTitle>Current Policies</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="list-disc list-inside space-y-4">
+          <ul className="list-none">
             {policies &&
               policies.map((policy, index) => (
-                <li key={index} className="mb-4">
-                  <h2 className="text-xl font-semibold text-gray-800">{policy.name}</h2>
-                  <p className="text-sm text-gray-500 mb-2">API Version: {policy.api_version}</p>
-                  
-                  {/* Tracepoints */}
-                  <h3 className="mt-2 font-medium text-gray-700">Tracepoints</h3>
-                  <ul className="list-disc list-inside pl-6">
-                    {policy.policy.tracepoint_policy.tracepoints.map((tp, tpIndex) => (
-                      <li key={tpIndex} className="text-gray-700">{tp}</li>
-                    ))}
-                  </ul>
-                  
-                  {/* LSM Policies */}
-                  <h3 className="mt-4 font-medium text-gray-700">LSM Policies</h3>
-  
-                  {/* File Policies */}
-                  <h4 className="mt-2 font-medium text-gray-600">File Policies</h4>
-                  <ul className="list-disc list-inside pl-6">
-                    {policy.policy.lsm_policies.file.map((filePolicy, fileIndex) => (
-                      <li key={fileIndex} className="text-gray-700">
-                        Path: <span className="font-semibold">{filePolicy.path}</span> <br />
-                        Flags: {filePolicy.flags.join(", ")} <br />
-                        UIDs: {filePolicy.uid.join(", ")}
-                      </li>
-                    ))}
-                  </ul>
-  
-                  {/* Network Policies */}
-                  <h4 className="mt-2 font-medium text-gray-600">Network Policies</h4>
-                  <ul className="list-disc list-inside pl-6">
-                    {policy.policy.lsm_policies.network.map((netPolicy, netIndex) => (
-                      <li key={netIndex} className="text-gray-700">
-                        IP: <span className="font-semibold">{netPolicy.ip}</span> <br />
-                        Port: {netPolicy.port} <br />
-                        Protocol: {netPolicy.protocol} <br />
-                        Flags: {netPolicy.flags.join(", ")} <br />
-                        UIDs: {netPolicy.uid.join(", ")}
-                      </li>
-                    ))}
-                  </ul>
-  
-                  {/* Process Policies */}
-                  <h4 className="mt-2 font-medium text-gray-600">Process Policies</h4>
-                  <ul className="list-disc list-inside pl-6">
-                    {policy.policy.lsm_policies.process.map((procPolicy, procIndex) => (
-                      <li key={procIndex} className="text-gray-700">
-                        Command: <span className="font-semibold">{procPolicy.comm}</span> <br />
-                        Flags: {procPolicy.flags.join(", ")} <br />
-                        UIDs: {procPolicy.uid.join(", ")}
-                      </li>
-                    ))}
-                  </ul>
+                <li key={index} className="mb-6">
+                  <pre className="bg-gray-50 p-4 rounded-lg shadow-md text-sm whitespace-pre-wrap">
+                    api_version: {policy.api_version}
+                    {"\n"}name: {policy.name}
+                    {"\n"}policy:
+                    <div className="ml-4">
+                      container_name: {policy.policy.container_name}
+                      {"\n"}raw_tp: {policy.policy.raw_tp}
+                      {"\n"}tracepoint_policy:
+                      <div className="ml-4">
+                        tracepoints:
+                        {policy.policy.tracepoint_policy.tracepoints.map((tp, tpIndex) => (
+                          <div key={tpIndex} className="ml-6">- {tp}</div>
+                        ))}
+                      </div>
+                      {"\n"}lsm_policies:
+                      <div className="ml-4">
+                        file:
+                        {policy.policy.lsm_policies.file.map((filePolicy, fileIndex) => (
+                          <div key={fileIndex} className="ml-6">
+                            - path: {filePolicy.path}
+                            {"\n"}  flags: [{filePolicy.flags.join(", ")}]
+                            {"\n"}  uid: [{filePolicy.uid.join(", ")}]
+                          </div>
+                        ))}
+                        {"\n"}network:
+                        {policy.policy.lsm_policies.network.map((netPolicy, netIndex) => (
+                          <div key={netIndex} className="ml-6">
+                            - ip: {netPolicy.ip}
+                            {"\n"}  port: {netPolicy.port}
+                            {"\n"}  protocol: {netPolicy.protocol}
+                            {"\n"}  flags: [{netPolicy.flags.join(", ")}]
+                            {"\n"}  uid: [{netPolicy.uid.join(", ")}]
+                          </div>
+                        ))}
+                        {"\n"}process:
+                        {policy.policy.lsm_policies.process.map((procPolicy, procIndex) => (
+                          <div key={procIndex} className="ml-6">
+                            - comm: {procPolicy.comm}
+                            {"\n"}  flags: [{procPolicy.flags.join(", ")}]
+                            {"\n"}  uid: [{procPolicy.uid.join(", ")}]
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </pre>
                 </li>
               ))}
           </ul>
@@ -229,6 +223,7 @@ useEffect(()=>{
       </Card>
     </>
   );
+  
   
 
   const renderLoggingOption = () => (
