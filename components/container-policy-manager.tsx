@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import axios from 'axios'
 import { containerStructure } from './axios-struct'
+import { checkDomainOfScale } from 'recharts/types/util/ChartUtils'
 
 
 
@@ -64,7 +65,7 @@ const predefinedPolicies = [
 
 export function ContainerPolicyManagerComponent() {
   const [activeTab, setActiveTab] = useState('policy')
-  const [selectedContainer, setSelectedContainer] = useState('')
+  const [selectedContainer, setSelectedContainer] = useState<containerStructure>();
   const [policyOption, setPolicyOption] = useState('')
   const [loggingOption, setLoggingOption] = useState('medium')
   const [createPolicyOption, setCreatePolicyOption] = useState('')
@@ -81,12 +82,19 @@ export function ContainerPolicyManagerComponent() {
   const [isWhitelist, setIsWhitelist] = useState(true)
   const [selectedPredefinedPolicy, setSelectedPredefinedPolicy] = useState(null)
   const [containerList,setContainerList] = useState<containerStructure[]>([]);
+  const [policies,setPolicies] = useState([])
 
-
+const SERVER_API = 'http://113.198.229.153:4001/api/v1/'
+const SERVER_NUMBER = 13;
   
 useEffect(()=> {
-  axios.get('http://113.198.229.153:4001/api/v1/container/13').then((res)=>{ console.log(res.data.containers); setContainerList(res.data.containers)}).catch((err)=>console.log(err));
+  axios.get(`${SERVER_API}container/${SERVER_NUMBER}`).then((res)=>{ console.log(res.data.containers); setContainerList(res.data.containers)}).catch((err)=>console.log(err));
 },[]);
+
+useEffect(()=>{
+  if(selectedContainer) axios.get(`${SERVER_API}policy/${SERVER_NUMBER}/${selectedContainer.id}`).then((res)=> {setPolicies(res.data.polices); console.log(res.data)}).catch((err)=>console.log(err));
+},[selectedContainer])
+
   
   const renderBackButton = (onClick) => (
     <Button 
@@ -104,12 +112,12 @@ useEffect(()=> {
       <h1 className="text-3xl font-bold mb-6 text-blue-700">Select Container</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {containerList &&  containerList.map(container => (
-          <Card key={container} className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card key={container.name} className="cursor-pointer hover:shadow-md transition-shadow">
            <CardHeader>
              <CardTitle>{container.name}</CardTitle>
            </CardHeader>
            <CardContent>
-             <Button onClick={() => setSelectedContainer(container.name)} className="bg-blue-500 hover:bg-blue-600 text-white">Select</Button>
+             <Button onClick={() => setSelectedContainer(container)} className="bg-blue-500 hover:bg-blue-600 text-white">Select</Button>
           </CardContent>
           </Card>
         ))}
@@ -120,7 +128,7 @@ useEffect(()=> {
   const renderPolicyOptions = () => (
     <>
       {renderBackButton(() => setSelectedContainer(''))}
-      <h1 className="text-3xl font-bold mb-6 text-blue-700">Policy Options for {selectedContainer}</h1>
+      <h1 className="text-3xl font-bold mb-6 text-blue-700">Policy Options for {selectedContainer.name}</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setPolicyOption('check')}>
           <CardHeader>
@@ -153,26 +161,80 @@ useEffect(()=> {
   const renderCheckPolicy = () => (
     <>
       {renderBackButton(() => setPolicyOption(''))}
-      <h1 className="text-3xl font-bold mb-6 text-blue-700">Applied Policies for {selectedContainer}</h1>
+      <h1 className="text-3xl font-bold mb-6 text-blue-700">Applied Policies for {selectedContainer.name}</h1>
       <Card>
         <CardHeader>
           <CardTitle>Current Policies</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="list-disc list-inside">
-            <li>Network: Block incoming connections on port 22</li>
-            <li>Filesystem: Restrict write access to /etc directory</li>
-            <li>Process: Prevent execution of sudo command</li>
+          <ul className="list-disc list-inside space-y-4">
+            {policies &&
+              policies.map((policy, index) => (
+                <li key={index} className="mb-4">
+                  <h2 className="text-xl font-semibold text-gray-800">{policy.name}</h2>
+                  <p className="text-sm text-gray-500 mb-2">API Version: {policy.api_version}</p>
+                  
+                  {/* Tracepoints */}
+                  <h3 className="mt-2 font-medium text-gray-700">Tracepoints</h3>
+                  <ul className="list-disc list-inside pl-6">
+                    {policy.policy.tracepoint_policy.tracepoints.map((tp, tpIndex) => (
+                      <li key={tpIndex} className="text-gray-700">{tp}</li>
+                    ))}
+                  </ul>
+                  
+                  {/* LSM Policies */}
+                  <h3 className="mt-4 font-medium text-gray-700">LSM Policies</h3>
+  
+                  {/* File Policies */}
+                  <h4 className="mt-2 font-medium text-gray-600">File Policies</h4>
+                  <ul className="list-disc list-inside pl-6">
+                    {policy.policy.lsm_policies.file.map((filePolicy, fileIndex) => (
+                      <li key={fileIndex} className="text-gray-700">
+                        Path: <span className="font-semibold">{filePolicy.path}</span> <br />
+                        Flags: {filePolicy.flags.join(", ")} <br />
+                        UIDs: {filePolicy.uid.join(", ")}
+                      </li>
+                    ))}
+                  </ul>
+  
+                  {/* Network Policies */}
+                  <h4 className="mt-2 font-medium text-gray-600">Network Policies</h4>
+                  <ul className="list-disc list-inside pl-6">
+                    {policy.policy.lsm_policies.network.map((netPolicy, netIndex) => (
+                      <li key={netIndex} className="text-gray-700">
+                        IP: <span className="font-semibold">{netPolicy.ip}</span> <br />
+                        Port: {netPolicy.port} <br />
+                        Protocol: {netPolicy.protocol} <br />
+                        Flags: {netPolicy.flags.join(", ")} <br />
+                        UIDs: {netPolicy.uid.join(", ")}
+                      </li>
+                    ))}
+                  </ul>
+  
+                  {/* Process Policies */}
+                  <h4 className="mt-2 font-medium text-gray-600">Process Policies</h4>
+                  <ul className="list-disc list-inside pl-6">
+                    {policy.policy.lsm_policies.process.map((procPolicy, procIndex) => (
+                      <li key={procIndex} className="text-gray-700">
+                        Command: <span className="font-semibold">{procPolicy.comm}</span> <br />
+                        Flags: {procPolicy.flags.join(", ")} <br />
+                        UIDs: {procPolicy.uid.join(", ")}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
           </ul>
         </CardContent>
       </Card>
     </>
-  )
+  );
+  
 
   const renderLoggingOption = () => (
     <>
       {renderBackButton(() => setPolicyOption(''))}
-      <h1 className="text-3xl font-bold mb-6 text-blue-700">Logging Options for {selectedContainer}</h1>
+      <h1 className="text-3xl font-bold mb-6 text-blue-700">Logging Options for {selectedContainer.name}</h1>
       <Card>
         <CardHeader>
           <CardTitle>Current Logging Level: {loggingOption.charAt(0).toUpperCase() + loggingOption.slice(1)}</CardTitle>
@@ -203,7 +265,7 @@ useEffect(()=> {
   const renderCreatePolicy = () => (
     <>
       {renderBackButton(() => setPolicyOption(''))}
-      <h1 className="text-3xl font-bold mb-6 text-blue-700">Create Policy for {selectedContainer}</h1>
+      <h1 className="text-3xl font-bold mb-6 text-blue-700">Create Policy for {selectedContainer.name}</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setCreatePolicyOption('predefined')}>
           <CardHeader>
@@ -443,8 +505,8 @@ useEffect(()=> {
     if (selectedContainer) {
       return (
         <>
-          {renderBackButton(() => setSelectedContainer(''))}
-          <h1 className="text-3xl font-bold mb-6 text-blue-700">Container Details: {selectedContainer}</h1>
+          {renderBackButton(() => setSelectedContainer())}
+          <h1 className="text-3xl font-bold mb-6 text-blue-700">Container Details: {selectedContainer.name}</h1>
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -629,7 +691,7 @@ useEffect(()=> {
           <nav>
             <Button variant="ghost" className="w-full justify-start mb-2 text-white hover:bg-blue-700" onClick={() => {
               setActiveTab('policy')
-              setSelectedContainer('')
+            //  setSelectedContainer('')
               setPolicyOption('')
               setCreatePolicyOption('')
               setCustomPolicyStep(1)
@@ -639,7 +701,7 @@ useEffect(()=> {
             </Button>
             <Button variant="ghost" className="w-full justify-start mb-2 text-white hover:bg-blue-700" onClick={() => {
               setActiveTab('containers')
-             setSelectedContainer('')
+            // setSelectedContainer('')
             }}>
               <Box className="mr-2 h-4 w-4" />
               Containers
