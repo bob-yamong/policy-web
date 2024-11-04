@@ -72,7 +72,7 @@ export function ContainerPolicyManagerComponent() {
   const [selectedArgument, setSelectedArgument] = useState('')
   const [customPolicyStep, setCustomPolicyStep] = useState(1)
   const [username, setUsername] = useState('JohnDoe')
-  const [serverIP, setServerIP] = useState('192.168.1.100')
+  const [serverIP, setServerIP] = useState('113.198.229.153')
   const [isEditing, setIsEditing] = useState(false)
   const [tempUsername, setTempUsername] = useState('')
   const [tempServerIP, setTempServerIP] = useState('')
@@ -85,7 +85,7 @@ export function ContainerPolicyManagerComponent() {
 
   
 useEffect(()=> {
-  axios.get('http://113.198.229.153:4001/api/v1/server').then((res)=>{ console.log(res.data.server); setContainerList(res.data.server)}).catch((err)=>console.log(err));
+  axios.get('http://113.198.229.153:4001/api/v1/container/13').then((res)=>{ console.log(res.data.containers); setContainerList(res.data.containers)}).catch((err)=>console.log(err));
 },[]);
   
   const renderBackButton = (onClick) => (
@@ -532,12 +532,12 @@ useEffect(()=> {
         <p className="text-xl mb-4">Total Containers: {containerList.length}</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {containerList &&  containerList.map(container => (
-            <Card key={container} className="cursor-pointer hover:shadow-md transition-shadow">
+            <Card key={container.name} className="cursor-pointer hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle>{container}</CardTitle>
+                <CardTitle>{container.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button onClick={() => setSelectedContainer(container)} className="bg-blue-500 hover:bg-blue-600 text-white">View Details</Button>
+                <Button onClick={() => setSelectedContainer(container.name)} className="bg-blue-500 hover:bg-blue-600 text-white">View Details</Button>
               </CardContent>
             </Card>
           ))}
@@ -639,7 +639,7 @@ useEffect(()=> {
             </Button>
             <Button variant="ghost" className="w-full justify-start mb-2 text-white hover:bg-blue-700" onClick={() => {
               setActiveTab('containers')
-              setSelectedContainer('')
+             setSelectedContainer('')
             }}>
               <Box className="mr-2 h-4 w-4" />
               Containers
